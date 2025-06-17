@@ -1,8 +1,4 @@
-import os
-
 from models.ResidualMLP import ResidualMLP
-from comet_ml import start
-from comet_ml.integration.pytorch import log_model
 
 import utils
 import torch
