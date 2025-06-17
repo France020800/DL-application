@@ -10,6 +10,7 @@ if __name__ == '__main__':
         'lr': 0.0001,
         'batch_size': 128,
         'input_size': 28 * 28,
+        'output_size': 10,
         'width': 512,
         'depth': 10,
         'weight_decay': 5e-9,

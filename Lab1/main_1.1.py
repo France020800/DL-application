@@ -9,6 +9,7 @@ if __name__ == '__main__':
         'lr': 0.0001,
         'batch_size': 128,
         'input_size': 28 * 28,
+        'output_size': 10,
         'width': 512,
         'depth': 10,
         'weight_decay': 5e-9,
@@ -19,5 +20,5 @@ if __name__ == '__main__':
     }
 
     utils.set_seed(42)
-    model = MLP([hyper_params['input_size']] + [hyper_params['width']] * hyper_params['depth'] + [10]).to(device)
+    model = MLP([hyper_params['input_size']] + [hyper_params['width']] * hyper_params['depth'] + hyper_params['output_size']).to(device)
     utils.start_train(model, hyper_params, comet_project='MLP vs ResidualMLP', device=device)
