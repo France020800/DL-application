@@ -3,6 +3,7 @@ import random
 import numpy as np
 import torch
 from sklearn.metrics import classification_report, accuracy_score
+from torch import nn
 from tqdm import tqdm
 
 def set_seed(SEED):
@@ -40,17 +41,28 @@ def train(model, train_loader, optimizer, criterion, num_epochs=10, device='cpu'
         print(f"Epoch {epoch + 1}, Loss: {running_loss / len(train_loader):.3f}")
 
 
-def get_msp_scores(loader, model, device='cpu'):
-    model.eval()
+def get_msp_scores(model, loader, device='cpu'):
     scores = []
     with torch.no_grad():
         for data in loader:
-            inputs, _ = data
-            inputs = inputs.to(device)
-            outputs = model(inputs)
+            x, y = data
+            output = model(x.to(device))
+            s = output.max(dim=1)[0]
+            scores.append(s)
+        scores_t = torch.cat(scores)
+        return scores_t
 
-            softmax_probs = torch.softmax(outputs, dim=1)
-            max_probs, _ = torch.max(softmax_probs, dim=1)
 
-            scores.extend(max_probs.cpu().numpy())
-    return np.array(scores)
+def get_score(model, dataloader, device='cpu'):
+    loss = nn.MSELoss(reduction='none')
+    model.eval()
+    scores = []
+    with torch.no_grad():
+        for data in dataloader:
+            x, y = data
+            x = x.to(device)
+            xr = model(x)
+            l = loss(x, xr)
+            score = l.mean([1, 2, 3])
+            scores.append(-score)
+    return scores
