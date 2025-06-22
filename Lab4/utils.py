@@ -2,9 +2,13 @@ import random
 
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report, accuracy_score
 from torch import nn
 from tqdm import tqdm
+
+from Lab4.NormalizeInverse import NormalizeInverse
+
 
 def set_seed(SEED):
     torch.manual_seed(SEED)
@@ -66,3 +70,79 @@ def get_score(model, dataloader, device='cpu'):
             score = l.mean([1, 2, 3])
             scores.append(-score)
     return scores
+
+
+def adversarial_attack(model, x, y, dataset, target_label, eps=1/255):
+    loss = nn.CrossEntropyLoss()
+    inv = NormalizeInverse((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    targeted_attack = True
+
+    x.requires_grad = True
+    # print(x)
+
+    before = x.clone()
+    print(x.shape)
+    model.eval()
+    output = model(x)
+    img = inv(x[0])
+    plt.imshow(img.permute(1, 2, 0).detach().cpu())
+    plt.title(dataset.classes[output.argmax()])
+    plt.show()
+
+    if output.argmax().item() != y.item() or y.item() == target_label:
+        print('classifier is already wrong or target label same as GT!')
+    else:
+        done = False
+        print(f'Attack class: {dataset.classes[output.argmax()]}\nTarget class: {dataset.classes[target_label]}')
+        n = 0
+
+        if targeted_attack:
+            target = torch.tensor(target_label).unsqueeze(0).cuda()
+            print(f'target: {dataset.classes[target.squeeze()]}')
+
+        while not done:  # untargeted attack until success!
+
+            x.retain_grad()
+
+            output = model(x)
+
+            model.zero_grad()
+            if targeted_attack:
+                yt = target  # targeted
+            else:
+                yt = y  # untargeted
+
+            l = loss(output, yt)
+            l.backward()
+
+            if targeted_attack:
+                x = x - eps * torch.sign(x.grad)  # fgsm targeted
+            else:
+                x = x + eps * torch.sign(x.grad)  # fgsm untargeted
+
+            n += 1
+
+            print(output.argmax().item(), y.item())
+            if not targeted_attack and output.argmax().item() != y.item():
+                print(f'Untargeted attack success! budget:{int(255 * n * eps)}/255')
+                done = True
+
+            if targeted_attack and output.argmax().item() == target:
+                print(
+                    f'Targeted attack({dataset.classes[output.argmax()]}) success! budget:{int(255 * n * eps)}/255')
+                done = True
+
+        img = inv(x.squeeze())
+        plt.imshow(img.permute(1, 2, 0).detach().cpu())
+        plt.title(dataset.classes[output.argmax()])
+        plt.show()
+
+        diff = (x - before)
+        diffi = inv(diff[0])
+        plt.imshow(diffi.permute(1, 2, 0).detach().cpu())
+        plt.title('diff')
+        plt.show()
+
+        diff_flat = diff.flatten()
+
+        plt.hist(diff_flat.detach().cpu())
