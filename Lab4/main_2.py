@@ -45,7 +45,7 @@ if __name__ == '__main__':
     y = torch.tensor([label]).to(device)  # make label a tensor and move to device
 
     adv_img, output = utils.generate_adversarial_image(
-        model, x, y, test_id_dataset, class_dict['airplane'], eps=hyper_params['eps']
+        model, x, y, test_id_dataset, class_dict['airplane'], eps=hyper_params['eps'], verbose=True
     )
 
     plt.imshow(adv_img.permute(1, 2, 0).detach().cpu())
