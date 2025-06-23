@@ -73,7 +73,7 @@ def get_score(model, dataloader, device='cpu'):
     return scores
 
 
-def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
+def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255, verbose=False):
     loss = nn.CrossEntropyLoss()
     inv = NormalizeInverse((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     targeted_attack = True
@@ -81,7 +81,8 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
     x.requires_grad = True
     # print(x)
 
-    print(x.shape)
+    if verbose: print(x.shape)
+
     model.eval()
     output = model(x)
     img = inv(x[0])
@@ -93,12 +94,12 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
         print('classifier is already wrong or target label same as GT!')
     else:
         done = False
-        print(f'Attack class: {dataset.classes[output.argmax()]}\nTarget class: {dataset.classes[target_label]}')
+        if verbose: print(f'Attack class: {dataset.classes[output.argmax()]}\nTarget class: {dataset.classes[target_label]}')
         n = 0
 
         if targeted_attack:
             target = torch.tensor(target_label).unsqueeze(0).cuda()
-            print(f'target: {dataset.classes[target.squeeze()]}')
+            if verbose: print(f'target: {dataset.classes[target.squeeze()]}')
 
         while not done:  # untargeted attack until success!
 
@@ -122,34 +123,16 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
 
             n += 1
 
-            print(output.argmax().item(), y.item())
+            if verbose: print(output.argmax().item(), y.item())
             if not targeted_attack and output.argmax().item() != y.item():
-                print(f'Untargeted attack success! budget:{int(255 * n * eps)}/255')
+                if verbose: print(f'Untargeted attack success! budget:{int(255 * n * eps)}/255')
                 done = True
 
             if targeted_attack and output.argmax().item() == target:
-                print(
-                    f'Targeted attack({dataset.classes[output.argmax()]}) success! budget:{int(255 * n * eps)}/255')
+                if verbose: print(f'Targeted attack({dataset.classes[output.argmax()]}) success! budget:{int(255 * n * eps)}/255')
                 done = True
 
         return img, output
-
-        img = inv(x.squeeze())
-        plt.imshow(img.permute(1, 2, 0).detach().cpu())
-        plt.title(dataset.classes[output.argmax()])
-        plt.show()
-
-        diff = (x - before)
-        diffi = inv(diff[0])
-        plt.imshow(diffi.permute(1, 2, 0).detach().cpu())
-        plt.title('diff')
-        plt.show()
-
-        diff_flat = diff.flatten()
-
-        plt.hist(diff_flat.detach().cpu())
-
-
 
 
 def load_pretrained_model(device='cpu'):
