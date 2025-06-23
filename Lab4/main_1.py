@@ -8,7 +8,7 @@ from torchvision.datasets import FakeData
 import sklearn.metrics as metrics
 
 import matplotlib.pyplot as plt
-import utils
+from Lab4.utils import utils
 
 hyper_params = {
     'learning_rate': 0.001,

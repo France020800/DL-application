@@ -81,7 +81,6 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
     x.requires_grad = True
     # print(x)
 
-    before = x.clone()
     print(x.shape)
     model.eval()
     output = model(x)
@@ -133,6 +132,8 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
                     f'Targeted attack({dataset.classes[output.argmax()]}) success! budget:{int(255 * n * eps)}/255')
                 done = True
 
+        return img, output
+
         img = inv(x.squeeze())
         plt.imshow(img.permute(1, 2, 0).detach().cpu())
         plt.title(dataset.classes[output.argmax()])
@@ -147,6 +148,8 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
         diff_flat = diff.flatten()
 
         plt.hist(diff_flat.detach().cpu())
+
+
 
 
 def load_pretrained_model(device='cpu'):
