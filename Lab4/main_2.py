@@ -48,6 +48,6 @@ if __name__ == '__main__':
     x = image[None, :]
     y = label[None]
 
-    utils.adversarial_attack(model, x, y, test_id_dataset, class_dict['airplane'], eps=hyper_params['eps'])
+    utils.generate_adversarial_image(model, x, y, test_id_dataset, class_dict['airplane'], eps=hyper_params['eps'])
 
 

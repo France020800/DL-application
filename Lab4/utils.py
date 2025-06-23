@@ -73,7 +73,7 @@ def get_score(model, dataloader, device='cpu'):
     return scores
 
 
-def adversarial_attack(model, x, y, dataset, target_label, eps=1/255):
+def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255):
     loss = nn.CrossEntropyLoss()
     inv = NormalizeInverse((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     targeted_attack = True
