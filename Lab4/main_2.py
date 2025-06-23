@@ -31,12 +31,7 @@ if __name__ == '__main__':
 
     class_dict = {class_name: id_class for id_class, class_name in enumerate(test_id_dataset.classes)}
 
-    model_load_path = 'pretrained_models/trained_model.pth'
-    model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 10)
-    model.load_state_dict(torch.load(model_load_path))
-    model = model.to(device)
+    model = utils.load_pretrained_model(device)
     accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
     print(f'Model accuracy on CIFAR10: {accuracy_report[0]}')
 

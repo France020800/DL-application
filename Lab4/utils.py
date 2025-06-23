@@ -2,6 +2,7 @@ import random
 
 import numpy as np
 import torch
+import torchvision
 from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report, accuracy_score
 from torch import nn
@@ -146,3 +147,13 @@ def adversarial_attack(model, x, y, dataset, target_label, eps=1/255):
         diff_flat = diff.flatten()
 
         plt.hist(diff_flat.detach().cpu())
+
+
+def load_pretrained_model(device='cpu'):
+    model_load_path = 'pretrained_models/trained_model.pth'
+    model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 10)
+    model.load_state_dict(torch.load(model_load_path))
+    model = model.to(device)
+    return model
