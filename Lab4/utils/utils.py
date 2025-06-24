@@ -79,19 +79,20 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255, ve
     targeted_attack = True
 
     x.requires_grad = True
-    # print(x)
 
     if verbose: print(x.shape)
 
     model.eval()
     output = model(x)
     img = inv(x[0])
-    plt.imshow(img.permute(1, 2, 0).detach().cpu())
-    plt.title(dataset.classes[output.argmax()])
-    plt.show()
+    if verbose:
+        plt.imshow(img.permute(1, 2, 0).detach().cpu())
+        plt.title(dataset.classes[output.argmax()])
+        plt.show()
 
     if output.argmax().item() != y.item() or y.item() == target_label:
-        print('classifier is already wrong or target label same as GT!')
+        if verbose: print('classifier is already wrong or target label same as GT!')
+        return img, output
     else:
         done = False
         if verbose: print(f'Attack class: {dataset.classes[output.argmax()]}\nTarget class: {dataset.classes[target_label]}')
