@@ -39,7 +39,6 @@ if __name__ == '__main__':
     print(f"ID training samples: {len(train_id_dataset)}")
     print(f"ID test samples: {len(test_id_dataset)}")
     print(f"OOD test samples: {len(test_ood_dataset)}")
-
     model_load_path = 'pretrained_models/trained_model.pth'
     model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
     num_ftrs = model.fc.in_features

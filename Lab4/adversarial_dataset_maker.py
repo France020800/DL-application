@@ -10,14 +10,6 @@ from tqdm import tqdm
 
 from Lab4.utils import utils
 
-hyper_params = {
-    'learning_rate': 0.001,
-    'momentum': 0.9,
-    'batch_size': 128,
-    'eps': 1/255,
-    'sample_id': 0
-}
-
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -49,7 +41,7 @@ if __name__ == '__main__':
                 x = images[img_idx].unsqueeze(0)
                 y = labels[img_idx].unsqueeze(0)
                 adv_img, _ = utils.generate_adversarial_image(model, x, y, train_id_dataset, random.randint(0, 9),
-                                                              eps=hyper_params['eps'])
+                                                              eps=1/255)
 
                 generated_adv_images_and_labels.append(
                     (adv_img.detach().cpu(), y.item()))

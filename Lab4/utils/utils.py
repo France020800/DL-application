@@ -8,7 +8,7 @@ from sklearn.metrics import classification_report, accuracy_score
 from torch import nn
 from tqdm import tqdm
 
-from Lab4.NormalizeInverse import NormalizeInverse
+from NormalizeInverse import NormalizeInverse
 
 
 def set_seed(SEED):

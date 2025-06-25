@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader, Subset
 from torchvision.transforms import transforms
 
-from Lab4.NormalizeInverse import NormalizeInverse
+from Lab4.utils.NormalizeInverse import NormalizeInverse
 from Lab4.utils import utils
 
 hyper_params = {
