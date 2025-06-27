@@ -1,10 +1,10 @@
 import random
-
+import torch.nn.functional as F
 import numpy as np
 import torch
 import torchvision
 from matplotlib import pyplot as plt
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import classification_report, accuracy_score, roc_auc_score, precision_recall_curve, auc
 from torch import nn
 from tqdm import tqdm
 
@@ -157,3 +157,41 @@ def load_pretrained_model(model_load_path, device='cpu'):
     model.load_state_dict(torch.load(model_load_path))
     model = model.to(device)
     return model
+
+
+def odin_detection(model, dataloader, device, T=1.0, epsilon=0.001):
+    model.eval()
+    ood_scores = []
+
+    for data in dataloader:
+        images, _ = data
+        images = images.to(device)
+        images.requires_grad = True
+
+        outputs = model(images)
+        scaled_outputs = outputs / T
+        probs = F.softmax(scaled_outputs, dim=1)
+
+        max_probs, _ = torch.max(probs, dim=1)
+
+        loss = -torch.sum(torch.log(max_probs))
+        model.zero_grad()
+        loss.backward()
+
+        perturbation = epsilon * torch.sign(images.grad)
+        perturbed_images = images + perturbation
+
+        perturbed_outputs = model(perturbed_images)
+        scaled_perturbed_outputs = perturbed_outputs / T
+        perturbed_probs = F.softmax(scaled_perturbed_outputs, dim=1)
+
+        ood_scores.extend(-torch.max(perturbed_probs, dim=1).values.cpu().detach().numpy())
+
+    return ood_scores
+
+
+def evaluate_ood_scores(ood_scores, labels):
+    auroc = roc_auc_score(labels, ood_scores)
+    precision, recall, _ = precision_recall_curve(labels, ood_scores)
+    aupr = auc(recall, precision)
+    return auroc, aupr
