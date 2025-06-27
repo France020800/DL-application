@@ -8,7 +8,7 @@ from sklearn.metrics import classification_report, accuracy_score
 from torch import nn
 from tqdm import tqdm
 
-from NormalizeInverse import NormalizeInverse
+from Lab4.utils.NormalizeInverse import NormalizeInverse
 
 
 def set_seed(SEED):
@@ -56,6 +56,20 @@ def get_msp_scores(model, loader, device='cpu'):
             scores.append(s)
         scores_t = torch.cat(scores)
         return scores_t
+
+
+def get_ood_scores(data_loader, model, device='cpu'):
+    model.eval()
+    scores = []
+    with torch.no_grad():
+        for inputs, _ in data_loader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            softmax_probs = torch.softmax(outputs, dim=1)
+            msp = torch.max(softmax_probs, dim=1)[0]
+            scores.extend((1 - msp).cpu().numpy())
+
+    return np.array(scores)
 
 
 def get_score(model, dataloader, device='cpu'):
@@ -136,8 +150,7 @@ def generate_adversarial_image(model, x, y, dataset, target_label, eps=1/255, ve
         return img, output
 
 
-def load_pretrained_model(device='cpu'):
-    model_load_path = 'pretrained_models/trained_model.pth'
+def load_pretrained_model(model_load_path, device='cpu'):
     model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 10)

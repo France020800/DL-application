@@ -1,8 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
+from sklearn.metrics import PrecisionRecallDisplay, auc, precision_recall_curve, RocCurveDisplay, roc_curve
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import FakeData
 import sklearn.metrics as metrics
@@ -61,7 +63,61 @@ if __name__ == '__main__':
     model_save_path = 'pretrained_models/trained_model.pth'
     torch.save(model.state_dict(), model_save_path)
 
-    print("\nCalculating OOD scores...")
+    id_val_scores = utils.get_ood_scores(test_id_loader, model, device)
+    ood_scores = utils.get_ood_scores(test_ood_loader, model, device)
+
+    plt.figure(figsize=(10, 6))
+    plt.hist(id_val_scores, bins=50, alpha=0.7, label='ID (Validation)', color='blue', density=True)
+    plt.hist(ood_scores, bins=50, alpha=0.7, label='OOD', color='red', density=True)
+    plt.title('Distribution of OOD Scores (1 - Max Softmax Probability)')
+    plt.xlabel('OOD Score')
+    plt.ylabel('Density')
+    plt.legend()
+    plt.show()
+
+    all_scores = np.concatenate((id_val_scores, ood_scores))
+    all_labels = np.concatenate((np.zeros(len(id_val_scores)), np.ones(len(ood_scores))))
+
+    fpr, tpr, thresholds = roc_curve(all_labels, all_scores, pos_label=1)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure(figsize=(8, 6))
+    roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name='OOD Detector')
+    roc_display.plot()
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.show()
+    print(f"ROC AUC: {roc_auc:.4f}")
+
+    precision, recall, _ = precision_recall_curve(all_labels, all_scores, pos_label=1)
+    pr_auc_ood = auc(recall, precision)
+
+    plt.figure(figsize=(8, 6))
+    pr_display_ood = PrecisionRecallDisplay(precision=precision, recall=recall,
+                                            estimator_name='OOD Detector (OOD as Positive)')
+    pr_display_ood.plot()
+    plt.title('Precision-Recall Curve (OOD as Positive)')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.show()
+    print(f"Precision-Recall AUC (OOD as Positive): {pr_auc_ood:.4f}")
+
+    id_ness_scores = 1 - all_scores
+    precision_id, recall_id, _ = precision_recall_curve(all_labels, id_ness_scores, pos_label=0)  # pos_label=0 for ID
+    pr_auc_id = auc(recall_id, precision_id)
+
+    plt.figure(figsize=(8, 6))
+    pr_display_id = PrecisionRecallDisplay(precision=precision_id, recall=recall_id,
+                                           estimator_name='OOD Detector (ID as Positive)')
+    pr_display_id.plot()
+    plt.title('Precision-Recall Curve (ID as Positive)')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.show()
+    print(f"Precision-Recall AUC (ID as Positive): {pr_auc_id:.4f}")
+
+    '''print("\nCalculating OOD scores...")
     id_scores = utils.get_msp_scores(model, test_id_loader, device=device)
     ood_scores = utils.get_msp_scores(model, test_ood_loader, device=device)
 
@@ -82,5 +138,5 @@ if __name__ == '__main__':
 
     metrics.RocCurveDisplay.from_predictions(y, y_pred)
     plt.show()
-    plt.savefig('plots/ROC_curve.png', dpi=300, bbox_inches='tight')
+    plt.savefig('plots/ROC_curve.png', dpi=300, bbox_inches='tight')'''
 
