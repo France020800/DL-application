@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     class_dict = {class_name: id_class for id_class, class_name in enumerate(test_id_dataset.classes)}
 
-    model = utils.load_pretrained_model('/data01/dl24framar/deep_learning_application/Lab4/pretrained_models/trained_model.pth', device)
+    model = utils.load_pretrained_model('pretrained_models/trained_model.pth', device)
     accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
     print(f'Model accuracy on CIFAR10: {accuracy_report[0]}')
 

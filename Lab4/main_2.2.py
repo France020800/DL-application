@@ -43,7 +43,7 @@ if __name__ == '__main__':
     test_ood_loader = DataLoader(test_ood_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
 
     # model = utils.load_pretrained_model('/data01/dl24framar/deep_learning_application/Lab4/pretrained_models/trained_model.pth', device)
-    model = utils.load_pretrained_model('/data01/dl24framar/deep_learning_application/Lab4/pretrained_models/adv_exposure_model.pth', device)
+    model = utils.load_pretrained_model('pretrained_models/adv_exposure_model.pth', device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=hyper_params['learning_rate'], momentum=hyper_params['momentum'])
 
@@ -109,25 +109,3 @@ if __name__ == '__main__':
     plt.show()
     print(f"Precision-Recall AUC (ID as Positive): {pr_auc_id:.4f}")
 
-'''    print("\nCalculating OOD scores...")
-    id_scores = utils.get_msp_scores(model, test_id_loader, device=device)
-    ood_scores = utils.get_msp_scores(model, test_ood_loader, device=device)
-
-    print(f"Calculated {len(id_scores)} ID scores and {len(ood_scores)} OOD scores.")
-
-    print("Plotting histograms of OOD scores...")
-    plt.hist(id_scores.cpu(), density=True, alpha=0.5, bins=25, label='test')
-    plt.hist(ood_scores.cpu(), density=True, alpha=0.5, bins=25, label='fake')
-    plt.legend()
-    plt.show()
-    plt.savefig('/data01/dl24framar/deep_learning_application/Lab4/plots/adv_exposure_ood_scores_plot_CIFAR100_dataset.png', dpi=300, bbox_inches='tight')
-
-    print("Plotting in-distribution ROC curve...")
-    y_in = torch.ones(len(id_scores))
-    y_out = torch.zeros(len(ood_scores))
-    y = torch.cat((y_in, y_out)).numpy()
-    y_pred = torch.cat((id_scores, ood_scores)).cpu().numpy()
-
-    metrics.RocCurveDisplay.from_predictions(y, y_pred)
-    plt.show()
-    plt.savefig('/data01/dl24framar/deep_learning_application/Lab4/plots/adv_exposure_ROC_curve.png', dpi=300, bbox_inches='tight')'''
