@@ -1,6 +1,6 @@
 # 📚 Deep Learning Application Repository
 
-Welcome to my Deep Learning Application repository! This repository contains the code and resources developed for a university examination in Deep Learning. It showcases various concepts, models, and practical applications covered throughout the course.
+Deep Learning Application repository! This repository contains the code and resources developed for a university examination in Deep Learning. 
 
 ---
 
