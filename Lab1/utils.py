@@ -63,8 +63,9 @@ def start_train(model, hyper_params, comet_project, dataset='mnist', device='cpu
         experiment.log_metrics({
             'loss': train_loss,
             'val_acc': val_acc,
-            'train_acc': train_acc
-        })
+            'train_acc': train_acc,
+        }, step=epoch)
+        experiment.log_metric('current_epoch', epoch, step=epoch)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss

@@ -12,7 +12,7 @@ if __name__ == '__main__':
         'batch_size': 128,
         'in_channels': 3,
         'num_classes': 10,
-        'conv_channels': [32, 32, 64, 64],
+        'conv_channels': [32, 32, 64, 64, 128, 128],
         'weight_decay': 5e-9,
         'step_size': 5,
         'gamma': 0.1,
