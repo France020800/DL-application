@@ -1,7 +1,8 @@
+import random
+
 import torch
 import torchvision
 from matplotlib import pyplot as plt
-from torch.utils.data import DataLoader, Subset
 from torchvision.transforms import transforms
 
 from Lab4.utils.NormalizeInverse import NormalizeInverse
@@ -21,31 +22,30 @@ transform = transforms.Compose([
 ])
 
 
-if __name__ == '__main__':
+def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    utils.set_seed(1234)
+    utils.set_seed(42)
     inv = NormalizeInverse((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
     test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    shuffled_indices = torch.randperm(len(test_id_dataset))
-    shuffled_dataset = Subset(test_id_dataset, shuffled_indices)
-    test_id_loader = DataLoader(shuffled_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
 
     class_dict = {class_name: id_class for id_class, class_name in enumerate(test_id_dataset.classes)}
 
     model = utils.load_pretrained_model('pretrained_models/trained_model.pth', device)
-    accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
-    print(f'Model accuracy on CIFAR10: {accuracy_report[0]}')
-
     model.train()
 
-    idx = 0  # sample index
+    idx = random.randint(0, len(test_id_dataset) - 1)
     image, label = test_id_dataset[idx]
-    x = image.unsqueeze(0).to(device)  # add batch dimension and move to device
-    y = torch.tensor([label]).to(device)  # make label a tensor and move to device
+    x = image.unsqueeze(0).to(device)
+    y = torch.tensor([label]).to(device)
+
+    # Select the adv_class
+    all_classes = list(class_dict.values())
+    all_classes.remove(label)
+    adv_class = random.choice(all_classes)
 
     adv_img, output = utils.generate_adversarial_image(
-        model, x, y, test_id_dataset, class_dict['airplane'], eps=hyper_params['eps'], verbose=True
+        model, x, y, test_id_dataset, adv_class, eps=hyper_params['eps'], verbose=True
     )
 
     plt.imshow(adv_img.permute(1, 2, 0).detach().cpu())
@@ -62,3 +62,5 @@ if __name__ == '__main__':
 
     plt.hist(diff_flat.detach().cpu())
 
+if __name__ == '__main__':
+    main()
