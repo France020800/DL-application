@@ -195,3 +195,19 @@ def evaluate_ood_scores(ood_scores, labels):
     precision, recall, _ = precision_recall_curve(labels, ood_scores)
     aupr = auc(recall, precision)
     return auroc, aupr
+
+
+def compute_scores(model, device, data_loader, score_fun):
+    scores = []
+    with torch.no_grad():
+        for data in data_loader:
+            x, y = data
+            output = model(x.to(device))
+            s = score_fun(output)
+            scores.append(s)
+        scores_t = torch.cat(scores)
+        return scores_t
+
+def max_logit(logit):
+    s = logit.max(dim=1)[0] #get the max for each element of the batch
+    return s
