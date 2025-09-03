@@ -16,13 +16,13 @@ This section outlines the content and objectives of each laboratory session. Eac
 * TODO - Add the results of distillation project
 ---
 
-### **Lab 3: Recurrent Neural Networks (RNNs) for Sequence Modeling**
+### **Lab 3: Working with Transformers in the HuggingFace Ecosystem**
 
 * **Objective**: This laboratory focuses on Recurrent Neural Networks (RNNs), suitable for processing sequential data such as text or time series. We explore their application in tasks like sentiment analysis or sequence prediction.
 
 ---
 
-### **Lab 4: Advanced Topics and Project Implementation (Optional/Placeholder)**
+### **Lab 4: Adversarial Learning and OOD Detection**
 
 * **Objective**: 
 
