@@ -17,7 +17,8 @@ hyper_params = {
     'epochs': 10,
     'learning_rate': 0.001,
     'momentum': 0.9,
-    'batch_size': 128,
+    'batch_size': 64,
+    'train_ratio': 0.8
 }
 
 transform = transforms.Compose([
@@ -25,87 +26,87 @@ transform = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
-if __name__ == '__main__':
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+def main():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     utils.set_seed(42)
 
-    data_dir = '/data01/dl24framar/deep_learning_application/Lab4/adv_cifar10'
+    # Load previous trained model
+    model = utils.load_pretrained_model('pretrained_models/trained_model.pth', device)
+    model.to(device)
+
+    # Load ADV dataset
+    data_dir = 'adv_dataset'
     labels_path = os.path.join(data_dir, 'labels.csv')
     adv_dataset = AdversarialDataset(data_dir, labels_path, transform=transform)
-    adv_loader = DataLoader(adv_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
+    dataset_size = len(adv_dataset)
+    train_size = int(hyper_params['train_ratio'] * dataset_size)
+    test_size = dataset_size - train_size
 
-    test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    test_id_loader = DataLoader(test_id_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
+    adv_train_dataset, adv_test_dataset = torch.utils.data.random_split(adv_dataset, [train_size, test_size])
 
+    adv_train_loader = DataLoader(adv_train_dataset, batch_size=hyper_params['batch_size'], shuffle=True)
+    adv_test_dataset = DataLoader(adv_test_dataset, batch_size=hyper_params['batch_size'], shuffle=True)
+
+    # Load OOD dataset
     ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
     ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 20]
     test_ood_dataset = Subset(ood_dataset, ood_indices)
     test_ood_loader = DataLoader(test_ood_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
 
-    # model = utils.load_pretrained_model('/data01/dl24framar/deep_learning_application/Lab4/pretrained_models/trained_model.pth', device)
-    model = utils.load_pretrained_model('pretrained_models/adv_exposure_model.pth', device)
+    # Load CIFAR-10 test dataset
+    test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    test_id_loader = DataLoader(test_id_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
+
+    # Adversarial sample exposure
+    print("\nStarting adversarial salmple exposure...")
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in model.fc.parameters():
+        param.requires_grad = True
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=hyper_params['learning_rate'], momentum=hyper_params['momentum'])
+    utils.train(model, adv_train_loader, optimizer, criterion, device=device, num_epochs=hyper_params['epochs'])
+    print("Finish adversarial sample exposure.")
 
-    '''print('Start adversarial sample exposure...')
-    utils.train(model, adv_loader, optimizer, criterion, device=device, num_epochs=hyper_params['epochs'])'''
     accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
     print(f'Model accuracy on CIFAR10: {accuracy_report[0]}')
+    model_save_path = 'pretrained_models/ADV_exposure_model.pth'
+    torch.save(model.state_dict(), model_save_path)
 
-    #model_save_path = '/data01/dl24framar/deep_learning_application/Lab4/pretrained_models/adv_exposure_model.pth'
-    #torch.save(model.state_dict(), model_save_path)
+    # Evaluate model on OOD dataset
+    scores_test = utils.compute_scores(model, device, test_id_loader, utils.max_logit)
+    scores_fake = utils.compute_scores(model, device, test_ood_loader, utils.max_logit)
 
-    id_val_scores = utils.get_ood_scores(test_id_loader, model, device)
-    ood_scores = utils.get_ood_scores(test_ood_loader, model, device)
-
-    plt.figure(figsize=(10, 6))
-    plt.hist(id_val_scores, bins=50, alpha=0.7, label='ID (Validation)', color='blue', density=True)
-    plt.hist(ood_scores, bins=50, alpha=0.7, label='OOD', color='red', density=True)
-    plt.title('Distribution of OOD Scores (1 - Max Softmax Probability)')
-    plt.xlabel('OOD Score')
-    plt.ylabel('Density')
+    plt.plot(sorted(scores_test.cpu()), label='test')
+    plt.plot(sorted(scores_fake.cpu()), label='fake')
     plt.legend()
     plt.show()
 
-    all_scores = np.concatenate((id_val_scores, ood_scores))
-    all_labels = np.concatenate((np.zeros(len(id_val_scores)), np.ones(len(ood_scores))))
-
-    fpr, tpr, thresholds = roc_curve(all_labels, all_scores, pos_label=1)
-    roc_auc = auc(fpr, tpr)
-
-    plt.figure(figsize=(8, 6))
-    roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name='OOD Detector')
-    roc_display.plot()
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
+    plt.hist(scores_test.cpu(), density=True, alpha=0.5, bins=25, label='test')
+    plt.hist(scores_fake.cpu(), density=True, alpha=0.5, bins=25, label='fake')
+    plt.legend()
     plt.show()
-    print(f"ROC AUC: {roc_auc:.4f}")
 
-    precision, recall, _ = precision_recall_curve(all_labels, all_scores, pos_label=1)
-    pr_auc_ood = auc(recall, precision)
+    ## Evaluate new OOD detection performance
+    ypred = torch.cat((scores_test, scores_fake))
+    y_test = torch.ones_like(scores_test)
+    y_fake = torch.zeros_like(scores_fake)
+
+    y = torch.cat((y_test, y_fake))
+
+    RocCurveDisplay.from_predictions(y.cpu(), ypred.cpu())
+
+    precision, recall, _ = precision_recall_curve(y.cpu().numpy(), ypred.cpu().numpy())
+    pr_auc = auc(recall, precision)
 
     plt.figure(figsize=(8, 6))
-    pr_display_ood = PrecisionRecallDisplay(precision=precision, recall=recall,
-                                            estimator_name='OOD Detector (OOD as Positive)')
-    pr_display_ood.plot()
-    plt.title('Precision-Recall Curve (OOD as Positive)')
+    pr_display = PrecisionRecallDisplay(precision=precision, recall=recall)
+    pr_display.plot()
+    plt.title(f'Precision-Recall Curve (AUC = {pr_auc:.4f})')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.show()
-    print(f"Precision-Recall AUC (OOD as Positive): {pr_auc_ood:.4f}")
 
-    id_ness_scores = 1 - all_scores
-    precision_id, recall_id, _ = precision_recall_curve(all_labels, id_ness_scores, pos_label=0)  # pos_label=0 for ID
-    pr_auc_id = auc(recall_id, precision_id)
 
-    plt.figure(figsize=(8, 6))
-    pr_display_id = PrecisionRecallDisplay(precision=precision_id, recall=recall_id,
-                                           estimator_name='OOD Detector (ID as Positive)')
-    pr_display_id.plot()
-    plt.title('Precision-Recall Curve (ID as Positive)')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.show()
-    print(f"Precision-Recall AUC (ID as Positive): {pr_auc_id:.4f}")
-
+if __name__ == '__main__':
+    main()
