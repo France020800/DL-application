@@ -1,6 +1,6 @@
 import torch
 import torchvision
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader, ConcatDataset, Subset
 from torchvision.datasets import FakeData
 
 from utils import  utils
@@ -16,9 +16,15 @@ if __name__ == '__main__':
 
     batch_size = 128
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    fakeset = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
+    # fakeset = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
     test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=8, persistent_workers=True)
-    fake_loader = DataLoader(fakeset, batch_size=batch_size, shuffle=False, num_workers=8, persistent_workers=True)
+    # fake_loader = DataLoader(fakeset, batch_size=batch_size, shuffle=False, num_workers=8, persistent_workers=True)
+
+    ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
+    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 20]
+    fakeset = Subset(ood_dataset, ood_indices)
+    fake_loader = DataLoader(fakeset, batch_size=batch_size, shuffle=False, num_workers=2)
+
     combined_loader = DataLoader(ConcatDataset([testset, fakeset]), batch_size=batch_size, shuffle=False, num_workers=8,
                                  persistent_workers=True)
 
@@ -32,8 +38,7 @@ if __name__ == '__main__':
     for T in T_values:
         for epsilon in epsilon_values:
             ood_scores = utils.odin_detection(model, combined_loader, device, T=T, epsilon=epsilon)
-            labels = [0] * len(test_loader.dataset) + [1] * len(fake_loader.dataset)  # 0 for ID, 1 for OOD
-            # labels = [1] * len(fake_loader.dataset)
+            labels = [0] * len(test_loader.dataset) + [1] * len(fake_loader.dataset)
             auroc, aupr = utils.evaluate_ood_scores(ood_scores, labels)
             print(f"T={T}, epsilon={epsilon}, AUROC={auroc:.4f}, AUPR={aupr:.4f}")
 

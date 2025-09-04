@@ -5,14 +5,14 @@ import utils
 import torch
 
 if __name__ == '__main__':
-    device = 'cuda:1' if torch.cuda.is_available else 'cpu'
+    device = 'cuda:0' if torch.cuda.is_available else 'cpu'
     hyper_params = {
         'epochs': 20,
         'lr': 0.1,
         'batch_size': 128,
         'in_channels': 3,
         'num_classes': 10,
-        'conv_channels': [32, 32, 64, 64, 128, 128],
+        'conv_channels': [32, 32, 64, 64, 128, 128, 256, 256],
         'weight_decay': 5e-9,
         'step_size': 5,
         'gamma': 0.1,

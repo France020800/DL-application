@@ -12,7 +12,7 @@ if __name__ == '__main__':
         'input_size': 28 * 28,
         'output_size': 10,
         'width': 512,
-        'depth': 20,
+        'depth': 4,
         'weight_decay': 5e-9,
         'step_size': 4,
         'gamma': 0.1,
