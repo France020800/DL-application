@@ -155,7 +155,7 @@ Given the same weights, convolutional networks with residual connections are als
 
 Detailed results are available on my [comet CNN](https://www.comet.com/france020800/cnn-vs-residualcnn) project.
 
-## 2.2 *Distill* the knowledge from a large model into a smaller one
+### 2.2 *Distill* the knowledge from a large model into a smaller one
 
 In this section is shown the results of knowledge distillation to transfer knowledge from a large, pre-trained model (teacher) to a smaller model (student). \
 The goal is to achieve comparable performance with reduced computational resources.
@@ -181,7 +181,126 @@ Detailed results are available on my [comet DISTILLATION](https://www.comet.com/
 
 ## **Lab 3: Working with Transformers in the HuggingFace Ecosystem**
 
-* **Objective**: This laboratory focuses on Recurrent Neural Networks (RNNs), suitable for processing sequential data such as text or time series. We explore their application in tasks like sentiment analysis or sequence prediction.
+**Objective**: Learn to work with the Hugging Face ecosystem to adapt models to new tasks.
+
+### 1.1 Load and explore the *Rotten Tomatoes* dataset
+
+The dataset contains 10,662 movie reviews, labeled as positive or negative and is structured with two columns: 
+- **text** - review content 
+- **label** - 0 = negative, 1 = positive
+
+Furthermore is splitted into:
+- **train** - 8530 reviews
+- **validation** - 1066 reviews
+- **test** - 1066 reviews
+
+<details>
+<summary>Positive and negative review examples</summary>
+
+```python
+{'text': 'the rock is destined to be the 21st century\'s new " conan " and that he\'s going to make a splash even greater than arnold schwarzenegger , jean-claud van damme or steven segal .', 'label': 1}
+{'text': 'simplistic , silly and tedious .', 'label': 0}
+```
+
+</details>
+
+### 1.2  Load the Distilbert model and corresponding tokenizer.
+Load the distilbert-base-uncased model from Hugging Face and its corresponding tokenizer. \
+Next use the tokenizer to preprocess a few examples from the dataset.
+
+<details>
+<summary>Code</summary>
+
+```python
+from transformers import AutoModel, AutoTokenizer
+
+model = AutoModel.from_pretrained('distilbert/distilbert-base-uncased')
+tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')
+
+# Take the first 3 samples
+samples = train_data['text'][:3]
+
+tokens = tokenizer(samples, padding=True, truncation=True, return_tensors='pt')
+outputs = model(**tokens)
+print('Model outputs:', outputs)
+```
+
+</details>
+
+<details>
+<summary>Output</summary>
+
+```python
+Model outputs: BaseModelOutput(last_hidden_state=tensor([[[-0.0332, -0.0168,  0.0194,  ...,  0.0476,  0.5834,  0.3036],
+         [-0.0235, -0.0555, -0.3638,  ...,  0.1877,  0.5781, -0.1577],
+         [-0.0516, -0.1014, -0.1511,  ...,  0.1503,  0.2649, -0.1575],
+         ...,
+         [ 0.3688, -0.1147,  0.8428,  ..., -0.0708, -0.0178, -0.2516],
+         [ 0.0654, -0.0206,  0.1889,  ...,  0.1159,  0.2323, -0.2404],
+         [ 0.0373, -0.0104,  0.1203,  ...,  0.1049,  0.2852, -0.3035]],
+
+        [[-0.2062, -0.0490, -0.4036,  ..., -0.1186,  0.6141,  0.3919],
+         [-0.4361, -0.1647, -0.3533,  ...,  0.1086,  0.9478, -0.0272],
+         [-0.1164,  0.1690,  0.2698,  ..., -0.1971,  0.4372,  0.2527],
+         ...,
+         [-0.2341,  0.4810, -0.2634,  ..., -0.3397,  0.2567,  0.1274],
+         [ 0.7139,  0.0574, -0.3260,  ...,  0.2041, -0.3800, -0.3343],
+         [ 0.5649,  0.2806, -0.0295,  ...,  0.1297, -0.3160, -0.1874]],
+
+        [[-0.2705, -0.1265, -0.0500,  ..., -0.3721,  0.2477,  0.3306],
+         [ 0.0502,  0.0702, -0.0243,  ..., -0.5188,  0.5020,  0.0597],
+         [-0.2193, -0.2208,  0.3721,  ..., -0.3424, -0.3176,  0.8824],
+         ...,
+         [ 0.2169, -0.3040, -0.2062,  ..., -0.2185, -0.3271, -0.2299],
+         [ 0.1381, -0.2591, -0.2001,  ..., -0.2420, -0.2505, -0.1271],
+         [ 0.0629, -0.2533, -0.1480,  ..., -0.2985, -0.1985,  0.0025]]],
+       grad_fn=<NativeLayerNormBackward0>), hidden_states=None, attentions=None)
+```
+
+</details>
+
+### 1.3 Extract feature and train a classifier
+Use the Distilbert model to extract features from the reviews and train a simple SVM classifier. \
+This will be the baseline for future experiments.
+
+Results on test set:
+Validation Accuracy: 82.0%
+
+Validation Classification Report:
+
+               precision    recall  f1-score
+
+           0       0.80      0.85      0.82
+           1       0.84      0.79      0.81
+
+### 2 Fine-tune Distilbert
+### 2.1 Tokenize the dataset splits
+Use the Distilbert tokenizer to preprocess the entire dataset splits (train, validation, test). \
+New dataset structure:
+
+```python
+Dataset({
+    features: ['text', 'label', 'input_ids', 'attention_mask'],
+    num_rows: 8530
+})
+```
+
+### 2.2 - 2.3 Load and fine-tune Distilbert
+Try to fine-tune the entire Distilbert model on the Rotten Tomatoes dataset. \
+Training setup:
+- **Model**: full trainable *distilbert-base-uncased* with a classification head
+- **Epochs**: 3
+- **Dataset**: first 1000 samples of the training set
+Reached accuracy: **83.0%**
+
+Finetuning the entire Distilbert model is very expensive and prevents using the entire dataset due to limited computational resources. \
+Training just 3 epochs requires about 20 minutes on *NVIDIA A100 GPU*.
+
+### 3.1 LoRA - Low-Rank Adaptation
+Implement Low-Rank Adaptation (LoRA) to fine-tune only a subset of the model's parameters. 
+This solution open the way to use the entire dataset and more epochs. \
+\
+Results:
 
 ---
 

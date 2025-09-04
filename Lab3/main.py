@@ -1,11 +1,17 @@
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer, set_seed
-from peft import LoraConfig, TaskType, get_peft_model
-from transformers import EarlyStoppingCallback, DataCollatorWithPadding
-from datasets import load_dataset
-from comet_ml import Experiment
-import evaluate
 import os
-import utils
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    TrainingArguments,
+    Trainer,
+    set_seed,
+    EarlyStoppingCallback,
+    DataCollatorWithPadding,
+)
+from peft import LoraConfig, TaskType, get_peft_model
+from datasets import load_dataset
+from comet_ml import  Experiment
+import evaluate
 
 def tokenize(examples):
     return tokenizer(examples['text'], padding='max_length', truncation=True)
@@ -29,7 +35,7 @@ if __name__ == "__main__":
         "lora_alpha": 32,
         "lora_dropout": 0.1,
         "weight_decay": 0.001,
-        "target_modules": ["q_lin", "k_lin", "v_lin", "out_lin"],
+        "target_modules": ["q_lin", "v_lin"],
         "learning_rate": 2e-5,
         "scheduler_type": "cosine_with_restarts",
         "early_stopping_patience": 5,
@@ -54,7 +60,6 @@ if __name__ == "__main__":
         r=hyper_param["r"],
         lora_alpha=hyper_param["lora_alpha"],
         lora_dropout=hyper_param["lora_dropout"],
-        bias='none',
         target_modules=hyper_param["target_modules"]
     )
 
@@ -66,7 +71,6 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')
     dataset = dataset.map(tokenize, batched=True)
 
-    metric = evaluate.load("accuracy")
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     token_count = len(dataset['train']) * 128
@@ -74,22 +78,29 @@ if __name__ == "__main__":
     num_steps = (len(dataset['train']) // train_batch_size) * 4
     warmup_steps = int(0.3 * num_steps)
 
+    accuracy = evaluate.load("accuracy")
+    def compute_metrics(eval_pred):
+        logits, labels = eval_pred
+        predictions = logits.argmax(axis=-1)
+        return accuracy.compute(predictions=predictions, references=labels)
+
+
     training_args = TrainingArguments(
         output_dir="./results_LoRA",
         evaluation_strategy="epoch",
         save_strategy="epoch",
         learning_rate=hyper_param["learning_rate"],
-        per_device_train_batch_size=train_batch_size,
+        per_device_train_batch_size=hyper_param["batch_size"],
         per_device_eval_batch_size=hyper_param["batch_size"],
         num_train_epochs=hyper_param["epochs"],
         weight_decay=hyper_param["weight_decay"],
-        warmup_steps=warmup_steps,
-        lr_scheduler_type="cosine_with_restarts",
-        report_to="comet_ml",
+        lr_scheduler_type=hyper_param["scheduler_type"],
+        report_to='comet_ml',
         logging_dir="./logs",
         logging_steps=100,
         metric_for_best_model="accuracy",
-        greater_is_better=True
+        greater_is_better=True,
+        load_best_model_at_end=True,
     )
 
     trainer = Trainer(
@@ -98,9 +109,14 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=dataset["train"],
         eval_dataset=dataset["validation"],
-        compute_metrics=utils.compute_metrics,
+        compute_metrics=compute_metrics,
         data_collator=data_collator,
-        # callbacks=[early_stopping_callback]
+        callbacks=[
+            EarlyStoppingCallback(
+                early_stopping_patience=hyper_param["early_stopping_patience"],
+                early_stopping_threshold=hyper_param["early_stopping_threshold"],
+            )
+        ],
     )
 
     print("LoRA fine-tuning...")

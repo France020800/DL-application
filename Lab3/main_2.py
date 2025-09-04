@@ -22,11 +22,11 @@ if __name__ == '__main__':
 
     utils.set_seed(42)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     dataset = load_dataset('cornell-movie-review-data/rotten_tomatoes')
     tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')
 
-    dataset = dataset.map(utils.tokenize, batched=True)
+    dataset = dataset.map(tokenize, batched=True)
     print(dataset['train'])
     print(dataset['validation'])
     print(dataset['test'])
@@ -34,7 +34,6 @@ if __name__ == '__main__':
     model = AutoModelForSequenceClassification.from_pretrained('distilbert/distilbert-base-uncased', num_labels=2)
     model = model.to(device)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     metric = evaluate.load("accuracy")
     small_train_dataset = dataset["train"].shuffle(seed=42).select(range(1000))
     small_eval_dataset = dataset["test"].shuffle(seed=42).select(range(1000))

@@ -21,6 +21,14 @@ def main():
     print(val_data.shape)
     print(test_data.shape)
 
+    # Positive review
+    positive_review = next(item for item in train_data if item['label'] == 1)
+    print(positive_review)
+
+    # Negative review
+    negative_review = next(item for item in train_data if item['label'] == 0)
+    print(negative_review)
+
 
     ## Exercise 1.2: Load the Distilbert model and corresponding tokenizer.
     model = AutoModel.from_pretrained('distilbert/distilbert-base-uncased')
