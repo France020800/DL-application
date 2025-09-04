@@ -380,13 +380,19 @@ fake_ood_dataset = FakeData(size=1000, image_size=(3, 32, 32), transform=transfo
 
 <p align="middle">
     <img src="Lab4/results/ood_scores_plot_CIFAR100_dataset.png" alt="ID and OOD Aquatic Mammals score distributions">
-    ID and OOD Aquatic Mammals score distributions
+</p>
+
+<p align="middle">
+  ID and OOD Aquatic Mammals score distributions
 </p>
 
 
 <p align="middle">
     <img src="Lab4/results/ood_scores_plot_fake_dataset.png" alt="ID and OOD FAKEDATA score distributions">
-    ID and OOD FAKEDATA score distributions
+</p>
+
+<p align="middle">
+  ID and OOD FAKEDATA score distributions
 </p>
 
 ### 1.2 Measure OOD detection performance
@@ -398,6 +404,9 @@ Evaluate the OOD detection of the model with:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
   <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+</p>
+
+<p align="middle">
   Aquatic Mammals and FAKEDATA
 </p>
 
@@ -408,6 +417,9 @@ ROC scores:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
   <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+</p>
+
+<p align="middle">
   Aquatic Mammals and FAKEDATA
 </p>
 
@@ -437,6 +449,9 @@ Added perturbation distribution plot on Automobile to Deer adversarial example:
 
 <p align="middle">
   <img src="Lab4/results/automobile_to_deer_histo.png" alt="Perturbation distribution" style="flex: 1; max-width: 50%;">
+</p>
+
+<p align="middle">
   Perturbation distribution
 </p>
 
