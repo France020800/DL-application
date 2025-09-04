@@ -38,16 +38,16 @@ def main():
     test_id_loader = DataLoader(test_id_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
 
     ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
-    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 20]
+    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 5]
     test_ood_dataset = Subset(ood_dataset, ood_indices)
-    # fakeset = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
+    fakeset = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
     test_ood_loader = DataLoader(test_ood_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
 
     print(f"ID training samples: {len(train_id_dataset)}")
     print(f"ID test samples: {len(test_id_dataset)}")
     print(f"OOD test samples: {len(test_ood_dataset)}")
-    model_load_path = 'pretrained_models/trained_model.pth'
-    model = torchvision.models.resnet18(weights='IMAGENET1K_V1')
+    model_load_path = os.path.join(os.getcwd(), 'pretrained_models/trained_model.pth')
+    model = torchvision.models.resnet18()
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 10)
     # model = CNN()
@@ -69,8 +69,8 @@ def main():
 
     accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
     print(f'Model accuracy on CIFAR10: {accuracy_report[0]}')
-    model_save_path = 'pretrained_models/trained_model.pth'
-    torch.save(model.state_dict(), model_save_path)
+    #model_save_path = 'pretrained_models/trained_model.pth'
+    #torch.save(model.state_dict(), model_save_path)
 
     ## Get scores and plot
     scores_test = utils.compute_scores(model, device, test_id_loader, utils.max_logit)

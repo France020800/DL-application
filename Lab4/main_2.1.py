@@ -21,10 +21,9 @@ transform = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
-
 def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    utils.set_seed(42)
+    utils.set_seed(1111)
     inv = NormalizeInverse((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
     test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
@@ -61,6 +60,7 @@ def main():
     diff_flat = diff.flatten()
 
     plt.hist(diff_flat.detach().cpu())
+    plt.show()
 
 if __name__ == '__main__':
     main()

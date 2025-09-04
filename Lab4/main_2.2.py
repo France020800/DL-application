@@ -8,6 +8,7 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
 from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
+from torchvision.datasets import FakeData
 from torchvision.transforms import transforms
 
 from utils.AdversarialDataset import AdversarialDataset
@@ -38,20 +39,18 @@ def main():
     data_dir = 'adv_dataset'
     labels_path = os.path.join(data_dir, 'labels.csv')
     adv_dataset = AdversarialDataset(data_dir, labels_path, transform=transform)
-    dataset_size = len(adv_dataset)
-    train_size = int(hyper_params['train_ratio'] * dataset_size)
-    test_size = dataset_size - train_size
 
-    adv_train_dataset, adv_test_dataset = torch.utils.data.random_split(adv_dataset, [train_size, test_size])
-
-    adv_train_loader = DataLoader(adv_train_dataset, batch_size=hyper_params['batch_size'], shuffle=True)
-    adv_test_dataset = DataLoader(adv_test_dataset, batch_size=hyper_params['batch_size'], shuffle=True)
+    adv_loader = DataLoader(adv_dataset, batch_size=hyper_params['batch_size'], shuffle=True)
 
     # Load OOD dataset
+
     ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
-    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 20]
+    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 5]
     test_ood_dataset = Subset(ood_dataset, ood_indices)
     test_ood_loader = DataLoader(test_ood_dataset, batch_size=hyper_params['batch_size'], shuffle=False, num_workers=2)
+
+    fake_set = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
+    fake_loader = DataLoader(fake_set, batch_size=hyper_params['batch_size'], shuffle=True)
 
     # Load CIFAR-10 test dataset
     test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
@@ -65,7 +64,7 @@ def main():
         param.requires_grad = True
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=hyper_params['learning_rate'], momentum=hyper_params['momentum'])
-    utils.train(model, adv_train_loader, optimizer, criterion, device=device, num_epochs=hyper_params['epochs'])
+    utils.train(model, adv_loader, optimizer, criterion, device=device, num_epochs=hyper_params['epochs'])
     print("Finish adversarial sample exposure.")
 
     accuracy_report = utils.evaluate_model(model, test_id_loader, device=device)
@@ -75,7 +74,7 @@ def main():
 
     # Evaluate model on OOD dataset
     scores_test = utils.compute_scores(model, device, test_id_loader, utils.max_logit)
-    scores_fake = utils.compute_scores(model, device, test_ood_loader, utils.max_logit)
+    scores_fake = utils.compute_scores(model, device, fake_loader, utils.max_logit)
 
     plt.plot(sorted(scores_test.cpu()), label='test')
     plt.plot(sorted(scores_fake.cpu()), label='fake')

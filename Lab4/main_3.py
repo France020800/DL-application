@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # fake_loader = DataLoader(fakeset, batch_size=batch_size, shuffle=False, num_workers=8, persistent_workers=True)
 
     ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
-    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 20]
+    ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 5]
     fakeset = Subset(ood_dataset, ood_indices)
     fake_loader = DataLoader(fakeset, batch_size=batch_size, shuffle=False, num_workers=2)
 

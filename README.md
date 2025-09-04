@@ -305,20 +305,131 @@ Results:
 ---
 
 ## **Lab 4: Adversarial Learning and OOD Detection**
+**Objective**: 
+- develop a methodology for detecting OOD samples and measuring the quality of OOD detection 
+- experiment with incorporating adversarial examples during training to render models more robust to adversarial attacks
 
-* **Objective**: 
+### 1.1 Build a simple OOD detection pipeline
+Use the CIFAR-10 dataset as in-distribution (ID) and as out-of-distribution (OOD):
+- **Aquatic Mammals** CIFAR-100 subset
+- **FAKEDATA** dataset
 
----
+<details>
+<summary>ID and OOD datasets</summary>
 
-## 🤝 Contribution
+```python
+train_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+test_id_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-This repository is primarily for a university examination. While direct contributions are not expected for this specific purpose, feedback or suggestions are welcome.
+ood_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
+ood_indices = [i for i, target in enumerate(ood_dataset.targets) if target < 5]
+cifar_ood_dataset = Subset(ood_dataset, ood_indices)
+fake_ood_dataset = FakeData(size=1000, image_size=(3, 32, 32), transform=transform)
 
----
+```
+</details>
 
-## 📄 License
+<p align="middle">
+    <img src="Lab4/results/ood_scores_plot_CIFAR100_dataset.png" alt="ID and OOD Aquatic Mammals score distributions">
+</p>
 
-This project is licensed under the MIT License - see the `LICENSE` file for details. (If you have a `LICENSE` file; otherwise, you can remove this section or specify another license).
+<p align="middle">
+    <img src="Lab4/results/ood_scores_plot_fake_dataset.png" alt="ID and OOD FAKEDATA score distributions">
+</p>
+
+### 1.2 Measure OOD detection performance
+
+Evaluate the OOD detection of the model with:
+- Receiver Operating Characteristic (**ROC**) curve
+- Precision-Recall (**PR**) curve.
+
+<p align="middle">
+  <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+</p>
+
+ROC scores:
+- Aquatic Mammals: 0.75
+- FAKEDATA: 0.91
+
+<p align="middle">
+  <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+</p>
+
+PR scores:
+- Aquatic Mammals: 0.98
+- FAKEDATA: 0.99
+
+OOD scores are higher on the FAKEDATASET as it contains images much further from CIFAR-10 than Aquatic Mammals.
+
+### 2.1 Implement FGSM and generate adversarial examples
+Implement the Fast Gradient Sign Method (FGSM) to generate adversarial examples for the CIFAR-10 dataset.
+
+Some exaples of adversarial images generated with FGSM
+<p align="middle">
+  <img src="Lab4/results/cat_true.png" alt="Cat" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/cat_to_ship.png" alt="Cat -> Ship" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/cat_to_ship_diff.png" alt="Diff" style="flex: 1; max-width: 50%;">
+</p>
+
+<p align="middle">
+  <img src="Lab4/results/automobile_true.png" alt="Automobile" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/automobile_to_deer.png" alt="Automobile -> Deer" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/automobile_to_deer_diff.png" alt="Diff" style="flex: 1; max-width: 50%;">
+</p>
+
+Added perturbation distribution plot on Automobile to Deer adversarial example:
+
+<p align="middle">
+  <img src="Lab4/results/automobile_to_deer_histo.png" alt="Perturbation distribution" style="flex: 1; max-width: 50%;">
+</p>
+
+### 2.2 Augment training with adversarial examples
+Working procedure:
+- Generate an Adversarial Dataset
+- Fine tune the previous model on the Adversarial Dataset
+- Evaluate the new model on OOD detection task
+
+A new Adversarial Dataset is created by augmenting the original training set with FGSM adversarial examples. \
+*Lab4/adversarial_dataset_maker.py* script generates, with the same model of the previous exercise, adversarial examples for a subset of the CIFAR-10 training data and saves them to *Lab4/adv_dataset*.
+- **Adversarial Dataset**: 5000 samples of ADV images with their original labels
+
+Resnet18 model is fine-tuned on the Adversarial Dataset for 5 epochs. \
+The fine-tuned model is then evaluated on the same OOD detection pipeline as exercise 1.
+
+Results on **Aquatic Mammals** OOD dataset:
+<p align="middle">
+  <img src="Lab4/results/ROC_curve_cifar_exposure.png" alt="ROC curve after ADV exposure" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/ROC_curve_cifar_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
+</p>
+
+Results on **FAKEDATA** OOD dataset:
+<p align="middle">
+  <img src="Lab4/results/ROC_curve_fake_exposure.png" alt="ROC curve after ADV exposure" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/ROC_curve_fake_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
+</p>
+
+The ADV exposure got worse results on both OOD datasets:
+- Aquatic Mammals: 
+  - 0.75 -> 0.72 ROC score
+  - 0.982 -> 0.978 PR score
+- FAKEDATA: 
+  - 0.91 -> 0.84 ROC score
+  - 0.990 -> 0.989 PR score
+
+### 3.1 Implement ODIN for OOD detection
+Out-of-Distribution Detector for Neural Networks (ODIN) is implemented to enhance OOD detection.
+The method involves:
+- **Temperature (T)**: This parameter scales the logits. A higher temperature value softens the output probability distribution, which can make the model more confident in its ID predictions.
+- **Perturbation (ϵ)**: This value controls the magnitude of the input perturbation.  The goal is to make the model's confidence in ID samples even higher, while OOD samples, which don't have a clear "correct" class, will show less of a confidence increase.
+
+*Lab4/main_3.py* evaluates the performance of ODIN for each combination of T and ϵ using the ROC curve and PR curve scores.
+
+Results on **Aquatic Mammals** OOD dataset:
+- Best ROC score: 0.765
+  - T = 10.0
+  - epsilon = 0.001
 
 ---
 
