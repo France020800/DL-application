@@ -380,10 +380,13 @@ fake_ood_dataset = FakeData(size=1000, image_size=(3, 32, 32), transform=transfo
 
 <p align="middle">
     <img src="Lab4/results/ood_scores_plot_CIFAR100_dataset.png" alt="ID and OOD Aquatic Mammals score distributions">
+    ID and OOD Aquatic Mammals score distributions
 </p>
+
 
 <p align="middle">
     <img src="Lab4/results/ood_scores_plot_fake_dataset.png" alt="ID and OOD FAKEDATA score distributions">
+    ID and OOD FAKEDATA score distributions
 </p>
 
 ### 1.2 Measure OOD detection performance
@@ -395,6 +398,7 @@ Evaluate the OOD detection of the model with:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
   <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+  Aquatic Mammals and FAKEDATA
 </p>
 
 ROC scores:
@@ -404,6 +408,7 @@ ROC scores:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
   <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+  Aquatic Mammals and FAKEDATA
 </p>
 
 PR scores:
@@ -432,6 +437,7 @@ Added perturbation distribution plot on Automobile to Deer adversarial example:
 
 <p align="middle">
   <img src="Lab4/results/automobile_to_deer_histo.png" alt="Perturbation distribution" style="flex: 1; max-width: 50%;">
+  Perturbation distribution
 </p>
 
 ### 2.2 Augment training with adversarial examples
@@ -450,13 +456,13 @@ The fine-tuned model is then evaluated on the same OOD detection pipeline as exe
 Results on **Aquatic Mammals** OOD dataset:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_cifar_exposure.png" alt="ROC curve after ADV exposure" style="flex: 1; max-width: 50%;">
-  <img src="Lab4/results/ROC_curve_cifar_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/PR_curve_cifar_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
 </p>
 
 Results on **FAKEDATA** OOD dataset:
 <p align="middle">
   <img src="Lab4/results/ROC_curve_fake_exposure.png" alt="ROC curve after ADV exposure" style="flex: 1; max-width: 50%;">
-  <img src="Lab4/results/ROC_curve_fake_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/PR_curve_fake_exposure.png" alt="PR curve after ADV exposure" style="flex: 1; max-width: 50%;">
 </p>
 
 The ADV exposure got worse results on both OOD datasets:
