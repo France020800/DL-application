@@ -29,13 +29,13 @@ if __name__ == "__main__":
     )
 
     hyper_param = {
-        "r": 8,
-        "epochs": 10,
+        "r": 16,
+        "epochs": 20,
         "batch_size": 16,
-        "lora_alpha": 32,
+        "lora_alpha": 64,
         "lora_dropout": 0.1,
         "weight_decay": 0.001,
-        "target_modules": ["q_lin", "v_lin"],
+        "target_modules": ["q_lin", "k_link", "o_link", "v_lin"],
         "learning_rate": 2e-5,
         "scheduler_type": "cosine_with_restarts",
         "early_stopping_patience": 5,
@@ -70,6 +70,9 @@ if __name__ == "__main__":
     dataset = load_dataset('cornell-movie-review-data/rotten_tomatoes')
     tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')
     dataset = dataset.map(tokenize, batched=True)
+
+    # Rename the 'label' column to 'labels' for Hugging Face Trainer compatibility
+    dataset = dataset.rename_column('label', 'labels')
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 

@@ -293,14 +293,63 @@ Training setup:
 - **Dataset**: first 1000 samples of the training set
 Reached accuracy: **83.0%**
 
+Another test on 20 epochs is done reaching the best accuracy of **85.3%** after about 2 hours of training.
+
 Finetuning the entire Distilbert model is very expensive and prevents using the entire dataset due to limited computational resources. \
-Training just 3 epochs requires about 20 minutes on *NVIDIA A100 GPU*.
+Training just 3 epochs requires about 20 minutes on *NVIDIA A2000 GPU*.
 
 ### 3.1 LoRA - Low-Rank Adaptation
 Implement Low-Rank Adaptation (LoRA) to fine-tune only a subset of the model's parameters. 
 This solution open the way to use the entire dataset and more epochs. \
-\
-Results:
+The best results, balancing performance and training time, are achieved with:
+- **LoRA rank (r)**: 8
+- **LoRA alpha**: 32
+- **LoRA dropout**: 0.1
+- **Target layers**: query, value
+
+<details>
+<summary>All Hyperparameters</summary>
+```python
+hyper_param = {
+        "r": 8,
+        "epochs": 5,
+        "batch_size": 16,
+        "lora_alpha": 32,
+        "lora_dropout": 0.1,
+        "weight_decay": 0.001,
+        "target_modules": ["q_lin", "v_lin"],
+        "learning_rate": 2e-5,
+        "scheduler_type": "cosine_with_restarts",
+        "early_stopping_patience": 5,
+        "early_stopping_threshold": 0.001
+    }
+```
+
+</details>
+
+Accuracy reached: **TODO**
+
+<details>
+<summary>Best accuracy configuration</summary>
+```python
+hyper_param = {
+        "r": 8,
+        "epochs": 25,
+        "batch_size": 16,
+        "lora_alpha": 32,
+        "lora_dropout": 0.1,
+        "weight_decay": 0.001,
+        "target_modules": ["q_lin", "k_link", "o_link", "v_lin"],
+        "learning_rate": 2e-5,
+        "scheduler_type": "cosine_with_restarts",
+        "early_stopping_patience": 5,
+        "early_stopping_threshold": 0.001
+    }
+```
+
+</details>
+
+Detailed results are available on my [comet BERT](https://www.comet.com/france020800/bert) project.
 
 ---
 
