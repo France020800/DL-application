@@ -415,8 +415,8 @@ ROC scores:
 - FAKEDATA: 0.91
 
 <p align="middle">
-  <img src="Lab4/results/ROC_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
-  <img src="Lab4/results/ROC_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/PR_curve_cifar.png" alt="Aquatic Mammals" style="flex: 1; max-width: 50%;">
+  <img src="Lab4/results/PR_curve_fake.png" alt="FAKEDATA" style="flex: 1; max-width: 50%;">
 </p>
 
 <p align="middle">
