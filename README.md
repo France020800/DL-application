@@ -327,7 +327,7 @@ hyper_param = {
 
 </details>
 
-Accuracy reached: **TODO**
+Accuracy reached: **85.0%**
 
 <details>
 <summary>Best accuracy configuration</summary>
